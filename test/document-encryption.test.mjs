@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
+
+const getDocument = typeof pdfjs.getDocument === 'function'
+  ? pdfjs.getDocument
+  : (pdfjs.default?.getDocument || pdfjs.default);
 import {
   isPdfEncrypted,
   encryptPdfDocument,
@@ -58,7 +62,7 @@ test('Document Encryption: Password required for access - blocks unauthorized ac
   // 1. Attempt access without password: must be rejected with NEED_PASSWORD (1)
   let needPasswordFired = false;
   try {
-    const task = pdfjs.getDocument({ data: cloneBytes(rawEncryptedBytes) });
+    const task = getDocument({ data: cloneBytes(rawEncryptedBytes) });
     task.onPassword = (callback, reason) => {
       if (reason === 1) needPasswordFired = true;
       callback(new Error('User cancelled password prompt'));
@@ -72,7 +76,7 @@ test('Document Encryption: Password required for access - blocks unauthorized ac
   // 2. Attempt access with incorrect password: must be rejected with INCORRECT_PASSWORD (2)
   let incorrectPasswordFired = false;
   try {
-    const task = pdfjs.getDocument({
+    const task = getDocument({
       data: cloneBytes(rawEncryptedBytes),
       password: 'CompletelyWrongPassword',
     });
@@ -87,7 +91,7 @@ test('Document Encryption: Password required for access - blocks unauthorized ac
   }
 
   // 3. Attempt access with correct user password: must succeed and decrypt exact text
-  const taskValid = pdfjs.getDocument({
+  const taskValid = getDocument({
     data: cloneBytes(rawEncryptedBytes),
     password,
   });
@@ -103,7 +107,7 @@ test('Document Encryption: Password required for access - blocks unauthorized ac
   );
 
   // 4. Attempt access with correct owner password: must succeed and decrypt exact text
-  const taskOwner = pdfjs.getDocument({
+  const taskOwner = getDocument({
     data: cloneBytes(rawEncryptedBytes),
     password: 'AdminMasterPassword999!',
   });

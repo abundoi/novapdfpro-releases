@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as pdfjs from 'pdfjs-dist';
+
+const getDocument = typeof pdfjs.getDocument === 'function'
+  ? pdfjs.getDocument
+  : (pdfjs.default?.getDocument || pdfjs.default);
 import { pdfEngine } from '../src/services/pdfEngine.ts';
 
 test('Watermark: Apply modifications correctly centers watermark and supports excludeFirstPage', async () => {
@@ -21,7 +25,7 @@ test('Watermark: Apply modifications correctly centers watermark and supports ex
   assert.ok(modifiedBytes && modifiedBytes.length > 500, 'Modified PDF must be produced');
 
   // Verify with pdfjs that page 1 does NOT have watermark, but page 2 DOES
-  const task = pdfjs.getDocument({ data: modifiedBytes });
+  const task = getDocument({ data: modifiedBytes });
   const doc = await task.promise;
   assert.equal(doc.numPages, 2);
 
@@ -60,7 +64,7 @@ test('Header & Footer: Apply modifications evaluates tokens and renders multi-zo
 
   assert.ok(modifiedBytes && modifiedBytes.length > 500, 'Modified PDF must be produced');
 
-  const task = pdfjs.getDocument({ data: modifiedBytes });
+  const task = getDocument({ data: modifiedBytes });
   const doc = await task.promise;
   assert.equal(doc.numPages, 3);
 
@@ -90,7 +94,7 @@ test('Header & Footer: excludeFirstPage suppresses headers & footers on cover pa
     },
   });
 
-  const task = pdfjs.getDocument({ data: modifiedBytes });
+  const task = getDocument({ data: modifiedBytes });
   const doc = await task.promise;
 
   const page1 = await doc.getPage(1);

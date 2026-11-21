@@ -2,6 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjs from 'pdfjs-dist';
+
+const getDocument = typeof pdfjs.getDocument === 'function'
+  ? pdfjs.getDocument
+  : (pdfjs.default?.getDocument || pdfjs.default);
 import { pdfEngine } from '../src/services/pdfEngine.ts';
 
 test('Paragraph Layout: layoutParagraphLines preserves explicit newlines and wraps long paragraphs', async () => {
@@ -80,7 +84,7 @@ test('Paragraph & Long Text: Apply modifications correctly burns multi-line text
   assert.ok(modifiedBytes && modifiedBytes.length > 500, 'Modified PDF must be produced');
 
   // Verify with pdfjs extraction that all lines and words were baked into the PDF text layer
-  const task = pdfjs.getDocument({ data: modifiedBytes });
+  const task = getDocument({ data: modifiedBytes });
   const doc = await task.promise;
   assert.equal(doc.numPages, 1);
 
