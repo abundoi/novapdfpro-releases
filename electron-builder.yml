@@ -1,0 +1,48 @@
+appId: com.novapdfpro.desktop
+productName: NovaPDFPro
+copyright: Copyright © 2026 NovaPDFPro
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+directories:
+  output: release/macos
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - public/**/*
+  - package.json
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+        - universal
+    - target: zip
+      arch:
+        - arm64
+        - x64
+        - universal
+  icon: build/icon.png
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  darkModeSupport: true
+  minimumSystemVersion: "10.15.0"
+
+dmg:
+  title: "${productName} ${version}"
+  contents:
+    - x: 130
+      y: 220
+      type: file
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+  window:
+    width: 540
+    height: 380

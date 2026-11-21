@@ -1,0 +1,66 @@
+name: Build Native macOS DMG Installer
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Package macOS DMG & Universal Binaries
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Production Frontend Bundle
+        run: npm run build
+
+      - name: Run Test Suite & Security Verification
+        run: npm test
+
+      - name: Build macOS DMG and ZIP Targets
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          npx electron-builder --mac dmg zip --arm64 --x64 --universal
+
+      - name: Prepare Release Artifacts & Checksums
+        run: |
+          cd release/macos
+          if [ -f "NovaPDFPro-1.31.0-mac-universal.dmg" ]; then
+            cp "NovaPDFPro-1.31.0-mac-universal.dmg" "NovaPDFPro.dmg"
+          elif [ -f "NovaPDFPro-1.31.0-mac-arm64.dmg" ]; then
+            cp "NovaPDFPro-1.31.0-mac-arm64.dmg" "NovaPDFPro.dmg"
+          fi
+          shasum -a 256 *.dmg *.zip > SHA256SUMS-MACOS.txt
+          echo "=== SHA-256 CHECKSUMS ==="
+          cat SHA256SUMS-MACOS.txt
+
+      - name: Upload Build Artifacts to Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaPDFPro-macOS-Build
+          path: |
+            release/macos/*.dmg
+            release/macos/*.zip
+            release/macos/SHA256SUMS-MACOS.txt
+
+      - name: Publish DMG Assets to GitHub Release v01.31
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload v01.31 release/macos/*.dmg release/macos/*.zip release/macos/SHA256SUMS-MACOS.txt --repo abundoi/novapdfpro-releases --clobber
